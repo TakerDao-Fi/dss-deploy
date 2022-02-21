@@ -17,13 +17,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.6.12;
 
 import {DSTest} from "ds-test/test.sol";
 import {DSToken} from "ds-token/token.sol";
 import {DSValue} from "ds-value/value.sol";
-import {GemJoin} from "dss/join.sol";
-import {LinearDecrease} from "dss/abaci.sol";
+import {GemJoin} from "dss-core/join.sol";
+import {LinearDecrease} from "dss-core/abaci.sol";
 
 import "./DssDeploy.sol";
 import {GovActions} from "./govActions.sol";

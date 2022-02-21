@@ -17,29 +17,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity >=0.6.12;
 
 import {DSAuth, DSAuthority} from "ds-auth/auth.sol";
-import {DSPause} from "ds-pause/pause.sol";
+import {DSPause} from "dss-pause/pause.sol";
 
-import {Vat} from "dss/vat.sol";
-import {Jug} from "dss/jug.sol";
-import {Vow} from "dss/vow.sol";
-import {Cat} from "dss/cat.sol";
-import {Dog} from "dss/dog.sol";
-import {DaiJoin} from "dss/join.sol";
-import {Flapper} from "dss/flap.sol";
-import {Flopper} from "dss/flop.sol";
-import {Flipper} from "dss/flip.sol";
-import {Clipper} from "dss/clip.sol";
+import {Vat} from "dss-core/vat.sol";
+import {Jug} from "dss-core/jug.sol";
+import {Vow} from "dss-core/vow.sol";
+import {Cat} from "dss-core/cat.sol";
+import {Dog} from "dss-core/dog.sol";
+import {DaiJoin} from "dss-core/join.sol";
+import {Flapper} from "dss-core/flap.sol";
+import {Flopper} from "dss-core/flop.sol";
+import {Flipper} from "dss-core/flip.sol";
+import {Clipper} from "dss-core/clip.sol";
 import {LinearDecrease,
         StairstepExponentialDecrease,
-        ExponentialDecrease} from "dss/abaci.sol";
-import {Dai} from "dss/dai.sol";
-import {End} from "dss/end.sol";
-import {ESM} from "esm/ESM.sol";
-import {Pot} from "dss/pot.sol";
-import {Spotter} from "dss/spot.sol";
+        ExponentialDecrease} from "dss-core/abaci.sol";
+import {Dai} from "dss-core/dai.sol";
+import {End} from "dss-core/end.sol";
+import {ESM} from "dss-esm/ESM.sol";
+import {Pot} from "dss-core/pot.sol";
+import {Spotter} from "dss-core/spot.sol";
 
 contract VatFab {
     function newVat(address owner) public returns (Vat vat) {
