@@ -1,145 +1,221 @@
-pragma solidity ^0.4.24;
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// DssDeploy.sol
+//
+// Copyright (C) 2018-2022 Dai Foundation
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import {DSToken} from "ds-token/token.sol";
+pragma solidity >=0.5.12;
+
 import {DSAuth, DSAuthority} from "ds-auth/auth.sol";
-import {DSGuard} from "ds-guard/guard.sol";
-import {DSProxy, DSProxyCache} from "ds-proxy/proxy.sol";
+import {DSPause} from "ds-pause/pause.sol";
 
-import {Vat} from "dss/tune.sol";
-import {Pit} from "dss/frob.sol";
-import {Drip} from "dss/drip.sol";
-import {Vow} from "dss/heal.sol";
-import {Cat} from "dss/bite.sol";
+import {Vat} from "dss/vat.sol";
+import {Jug} from "dss/jug.sol";
+import {Vow} from "dss/vow.sol";
+import {Cat} from "dss/cat.sol";
+import {Dog} from "dss/dog.sol";
 import {DaiJoin} from "dss/join.sol";
-import {DaiMove} from "dss/move.sol";
 import {Flapper} from "dss/flap.sol";
 import {Flopper} from "dss/flop.sol";
 import {Flipper} from "dss/flip.sol";
-
-import {Spotter} from "./poke.sol";
+import {Clipper} from "dss/clip.sol";
+import {LinearDecrease,
+        StairstepExponentialDecrease,
+        ExponentialDecrease} from "dss/abaci.sol";
+import {Dai} from "dss/dai.sol";
+import {End} from "dss/end.sol";
+import {ESM} from "esm/ESM.sol";
+import {Pot} from "dss/pot.sol";
+import {Spotter} from "dss/spot.sol";
 
 contract VatFab {
-    function newVat() public returns (Vat vat) {
+    function newVat(address owner) public returns (Vat vat) {
         vat = new Vat();
-        vat.rely(msg.sender);
+        vat.rely(owner);
+        vat.deny(address(this));
     }
 }
 
-contract PitFab {
-    function newPit(Vat vat) public returns (Pit pit) {
-        pit = new Pit(vat);
-        pit.rely(msg.sender);
-    }
-}
-
-contract DripFab {
-    function newDrip(Vat vat) public returns (Drip drip) {
-        drip = new Drip(vat);
-        drip.rely(msg.sender);
+contract JugFab {
+    function newJug(address owner, address vat) public returns (Jug jug) {
+        jug = new Jug(vat);
+        jug.rely(owner);
+        jug.deny(address(this));
     }
 }
 
 contract VowFab {
-    function newVow() public returns (Vow vow) {
-        vow = new Vow();
-        vow.rely(msg.sender);
+    function newVow(address owner, address vat, address flap, address flop) public returns (Vow vow) {
+        vow = new Vow(vat, flap, flop);
+        vow.rely(owner);
+        vow.deny(address(this));
     }
 }
 
 contract CatFab {
-    function newCat(Vat vat) public returns (Cat cat) {
+    function newCat(address owner, address vat) public returns (Cat cat) {
         cat = new Cat(vat);
-        cat.rely(msg.sender);
+        cat.rely(owner);
+        cat.deny(address(this));
     }
 }
 
-contract TokenFab {
-    function newToken(bytes32 symbol) public returns (DSToken token) {
-        token = new DSToken(symbol);
-        token.setOwner(msg.sender);
+contract DogFab {
+    function newDog(address owner, address vat) public returns (Dog dog) {
+        dog = new Dog(vat);
+        dog.rely(owner);
+        dog.deny(address(this));
     }
 }
 
-contract GuardFab {
-    function newGuard() public returns (DSGuard guard) {
-        guard = new DSGuard();
-        guard.setOwner(msg.sender);
+contract DaiFab {
+    function newDai(address owner, uint chainId) public returns (Dai dai) {
+        dai = new Dai(chainId);
+        dai.rely(owner);
+        dai.deny(address(this));
     }
 }
 
 contract DaiJoinFab {
-    function newDaiJoin(Vat vat, address dai) public returns (DaiJoin daiJoin) {
+    function newDaiJoin(address vat, address dai) public returns (DaiJoin daiJoin) {
         daiJoin = new DaiJoin(vat, dai);
     }
 }
 
-contract DaiMoveFab {
-    function newDaiMove(Vat vat) public returns (DaiMove daiMove) {
-        daiMove = new DaiMove(vat);
-    }
-}
-
 contract FlapFab {
-    function newFlap(address dai, address gov) public returns (Flapper flap) {
-        flap = new Flapper(dai, gov);
+    function newFlap(address owner, address vat, address gov) public returns (Flapper flap) {
+        flap = new Flapper(vat, gov);
+        flap.rely(owner);
+        flap.deny(address(this));
     }
 }
 
 contract FlopFab {
-    function newFlop(address dai, address gov) public returns (Flopper flop) {
-        flop = new Flopper(dai, gov);
-        flop.rely(msg.sender);
+    function newFlop(address owner, address vat, address gov) public returns (Flopper flop) {
+        flop = new Flopper(vat, gov);
+        flop.rely(owner);
+        flop.deny(address(this));
     }
 }
 
 contract FlipFab {
-    function newFlip(address dai, address gem) public returns (Flipper flop) {
-        flop = new Flipper(dai, gem);
+    function newFlip(address owner, address vat, address cat, bytes32 ilk) public returns (Flipper flip) {
+        flip = new Flipper(vat, cat, ilk);
+        flip.rely(owner);
+        flip.deny(address(this));
+    }
+}
+
+contract ClipFab {
+    function newClip(address owner, address vat, address spotter, address dog, bytes32 ilk) public returns (Clipper clip) {
+        clip = new Clipper(vat, spotter, dog, ilk);
+        clip.rely(owner);
+        clip.deny(address(this));
+    }
+}
+
+contract CalcFab {
+    function newLinearDecrease(address owner) public returns (LinearDecrease calc) {
+        calc = new LinearDecrease();
+        calc.rely(owner);
+        calc.deny(address(this));
+    }
+
+    function newStairstepExponentialDecrease(address owner) public returns (StairstepExponentialDecrease calc) {
+        calc = new StairstepExponentialDecrease();
+        calc.rely(owner);
+        calc.deny(address(this));
+    }
+
+    function newExponentialDecrease(address owner) public returns (ExponentialDecrease calc) {
+        calc = new ExponentialDecrease();
+        calc.rely(owner);
+        calc.deny(address(this));
     }
 }
 
 contract SpotFab {
-    function newSpotter(Pit pit, bytes32 ilk) public returns (Spotter spotter) {
-        spotter = new Spotter(pit, ilk);
-        spotter.rely(msg.sender);
+    function newSpotter(address owner, address vat) public returns (Spotter spotter) {
+        spotter = new Spotter(vat);
+        spotter.rely(owner);
+        spotter.deny(address(this));
     }
 }
 
-contract ProxyFab {
-    function newProxy() public returns (DSProxy proxy) {
-        proxy = new DSProxy(new DSProxyCache());
-        proxy.setOwner(msg.sender);
+contract PotFab {
+    function newPot(address owner, address vat) public returns (Pot pot) {
+        pot = new Pot(vat);
+        pot.rely(owner);
+        pot.deny(address(this));
+    }
+}
+
+contract EndFab {
+    function newEnd(address owner) public returns (End end) {
+        end = new End();
+        end.rely(owner);
+        end.deny(address(this));
+    }
+}
+
+contract ESMFab {
+    function newESM(address gov, address end, address proxy, uint min) public returns (ESM esm) {
+        esm = new ESM(gov, end, proxy, min);
+    }
+}
+
+contract PauseFab {
+    function newPause(uint delay, address owner, address authority) public returns(DSPause pause) {
+        pause = new DSPause(delay, owner, authority);
     }
 }
 
 contract DssDeploy is DSAuth {
     VatFab     public vatFab;
-    PitFab     public pitFab;
-    DripFab    public dripFab;
+    JugFab     public jugFab;
     VowFab     public vowFab;
     CatFab     public catFab;
-    TokenFab   public tokenFab;
-    GuardFab   public guardFab;
+    DogFab     public dogFab;
+    DaiFab     public daiFab;
     DaiJoinFab public daiJoinFab;
-    DaiMoveFab public daiMoveFab;
     FlapFab    public flapFab;
     FlopFab    public flopFab;
     FlipFab    public flipFab;
+    ClipFab    public clipFab;
+    CalcFab    public calcFab;
     SpotFab    public spotFab;
-    ProxyFab   public proxyFab;
+    PotFab     public potFab;
+    EndFab     public endFab;
+    ESMFab     public esmFab;
+    PauseFab   public pauseFab;
 
     Vat     public vat;
-    Pit     public pit;
-    Drip    public drip;
+    Jug     public jug;
     Vow     public vow;
     Cat     public cat;
-    DSToken public dai;
-    DSGuard public guard;
+    Dog     public dog;
+    Dai     public dai;
     DaiJoin public daiJoin;
-    DaiMove public daiMove;
     Flapper public flap;
     Flopper public flop;
-    DSProxy public mom;
+    Spotter public spotter;
+    Pot     public pot;
+    End     public end;
+    ESM     public esm;
+    DSPause public pause;
 
     mapping(bytes32 => Ilk) public ilks;
 
@@ -149,178 +225,255 @@ contract DssDeploy is DSAuth {
 
     struct Ilk {
         Flipper flip;
-        address adapter;
-        address mover;
-        Spotter spotter;
+        Clipper clip;
+        address join;
     }
 
-    constructor(
+    function addFabs1(
         VatFab vatFab_,
-        PitFab pitFab_,
-        DripFab dripFab_,
+        JugFab jugFab_,
         VowFab vowFab_,
         CatFab catFab_,
-        TokenFab tokenFab_,
-        GuardFab guardFab_,
-        DaiJoinFab daiJoinFab_,
-        DaiMoveFab daiMoveFab_,
+        DogFab dogFab_,
+        DaiFab daiFab_,
+        DaiJoinFab daiJoinFab_
+    ) public auth {
+        require(address(vatFab) == address(0), "Fabs 1 already saved");
+        vatFab = vatFab_;
+        jugFab = jugFab_;
+        vowFab = vowFab_;
+        catFab = catFab_;
+        dogFab = dogFab_;
+        daiFab = daiFab_;
+        daiJoinFab = daiJoinFab_;
+    }
+
+    function addFabs2(
         FlapFab flapFab_,
         FlopFab flopFab_,
         FlipFab flipFab_,
+        ClipFab clipFab_,
+        CalcFab calcFab_,
         SpotFab spotFab_,
-        ProxyFab proxyFab_
-    ) public {
-        vatFab = vatFab_;
-        pitFab = pitFab_;
-        dripFab = dripFab_;
-        vowFab = vowFab_;
-        catFab = catFab_;
-        tokenFab = tokenFab_;
-        guardFab = guardFab_;
-        daiJoinFab = daiJoinFab_;
-        daiMoveFab = daiMoveFab_;
+        PotFab potFab_,
+        EndFab endFab_,
+        ESMFab esmFab_,
+        PauseFab pauseFab_
+    ) public auth {
+        require(address(flapFab) == address(0), "Fabs 2 already saved");
         flapFab = flapFab_;
         flopFab = flopFab_;
         flipFab = flipFab_;
+        clipFab = clipFab_;
+        calcFab = calcFab_;
         spotFab = spotFab_;
-        proxyFab = proxyFab_;
+        potFab = potFab_;
+        endFab = endFab_;
+        esmFab = esmFab_;
+        pauseFab = pauseFab_;
+    }
+
+    function rad(uint wad) internal pure returns (uint) {
+        return wad * 10 ** 27;
     }
 
     function deployVat() public auth {
-        require(vat == address(0), "VAT already deployed");
-        vat = vatFab.newVat();
-    }
-
-    function deployPit() public auth {
-        require(vat != address(0), "Missing VAT deployment");
-        pit = pitFab.newPit(vat);
+        require(address(vatFab) != address(0), "Missing Fabs 1");
+        require(address(flapFab) != address(0), "Missing Fabs 2");
+        require(address(vat) == address(0), "VAT already deployed");
+        vat = vatFab.newVat(address(this));
+        spotter = spotFab.newSpotter(address(this), address(vat));
 
         // Internal auth
-        vat.rely(pit);
+        vat.rely(address(spotter));
     }
 
-    function deployDai() public auth {
-        require(vat != address(0), "Missing VAT deployment");
+    function deployDai(uint256 chainId) public auth {
+        require(address(vat) != address(0), "Missing previous step");
 
         // Deploy
-        dai     = tokenFab.newToken("DAI");
-        daiJoin = daiJoinFab.newDaiJoin(vat, dai);
-        guard = guardFab.newGuard();
-        guard.permit(daiJoin, dai, bytes4(keccak256("mint(address,uint256)")));
-        guard.permit(daiJoin, dai, bytes4(keccak256("burn(address,uint256)")));
-        dai.setAuthority(guard);
-        dai.setOwner(address(0));
-        daiMove = daiMoveFab.newDaiMove(vat);
-
-        // Internal auth
-        vat.rely(daiJoin);
-        vat.rely(daiMove);
+        dai = daiFab.newDai(address(this), chainId);
+        daiJoin = daiJoinFab.newDaiJoin(address(vat), address(dai));
+        dai.rely(address(daiJoin));
     }
 
-    function deployTaxation(address gov) public auth {
+    function deployTaxation() public auth {
+        require(address(vat) != address(0), "Missing previous step");
+
+        // Deploy
+        jug = jugFab.newJug(address(this), address(vat));
+        pot = potFab.newPot(address(this), address(vat));
+
+        // Internal auth
+        vat.rely(address(jug));
+        vat.rely(address(pot));
+    }
+
+    function deployAuctions(address gov) public auth {
         require(gov != address(0), "Missing GOV address");
-        require(vat != address(0), "Missing VAT deployment");
-        require(pit != address(0), "Missing PIT deployment");
+        require(address(jug) != address(0), "Missing previous step");
 
         // Deploy
-        vow = vowFab.newVow();
-        drip = dripFab.newDrip(vat);
-        flap = flapFab.newFlap(daiMove, gov);
+        flap = flapFab.newFlap(address(this), address(vat), gov);
+        flop = flopFab.newFlop(address(this), address(vat), gov);
+        vow = vowFab.newVow(address(this), address(vat), address(flap), address(flop));
 
         // Internal references set up
-        vow.file("vat", vat);
-        vow.file("flap", flap);
-        drip.file("vow", bytes32(address(vow)));
+        jug.file("vow", address(vow));
+        pot.file("vow", address(vow));
 
         // Internal auth
-        vat.rely(vow);
-        vat.rely(drip);
-        vat.rely(flap);
+        vat.rely(address(flop));
+        flap.rely(address(vow));
+        flop.rely(address(vow));
     }
 
-    function deployLiquidation(address gov) public auth {
-        require(vat != address(0), "Missing VAT deployment");
-        require(pit != address(0), "Missing PIT deployment");
-        require(vow != address(0), "Missing VOW deployment");
+    function deployLiquidator() public auth {
+        require(address(vow) != address(0), "Missing previous step");
 
         // Deploy
-        cat = catFab.newCat(vat);
-        cat.file("vow", vow);
-        cat.file("pit", pit);
-        flop = flopFab.newFlop(daiMove, gov);
+        cat = catFab.newCat(address(this), address(vat));
+        dog = dogFab.newDog(address(this), address(vat));
 
         // Internal references set up
-        vow.file("flop", flop);
+        cat.file("vow", address(vow));
+        dog.file("vow", address(vow));
 
         // Internal auth
-        vat.rely(cat);
-        vat.rely(flop);
-        vow.rely(cat);
-        flop.rely(vow);
+        vat.rely(address(cat));
+        vat.rely(address(dog));
+        vow.rely(address(cat));
+        vow.rely(address(dog));
     }
 
-    function deployMom(DSAuthority authority) public auth {
-        require(pit != address(0), "Missing PIT deployment");
-        require(vow != address(0), "Missing VOW deployment");
-        require(drip != address(0), "Missing DRIP deployment");
-        require(cat != address(0), "Missing CAT deployment");
+    function deployEnd() public auth {
+        require(address(cat) != address(0), "Missing previous step");
 
-        // Auth
-        mom = proxyFab.newProxy();
-        vat.rely(mom);
-        pit.rely(mom);
-        cat.rely(mom);
-        vow.rely(mom);
-        drip.rely(mom);
-        mom.setAuthority(authority);
-        mom.setOwner(0);
-        this.setAuthority(authority);
-        this.setOwner(0);
-        guard.setAuthority(authority);
-        guard.setOwner(msg.sender);
+        // Deploy
+        end = endFab.newEnd(address(this));
+
+        // Internal references set up
+        end.file("vat", address(vat));
+        end.file("cat", address(cat));
+        end.file("dog", address(dog));
+        end.file("vow", address(vow));
+        end.file("pot", address(pot));
+        end.file("spot", address(spotter));
+
+        // Internal auth
+        vat.rely(address(end));
+        cat.rely(address(end));
+        dog.rely(address(end));
+        vow.rely(address(end));
+        pot.rely(address(end));
+        spotter.rely(address(end));
     }
 
-    function deployCollateral(bytes32 ilk, address adapter, address mover, address pip) public auth {
+    function deployPause(uint delay, address authority) public auth {
+        require(address(dai) != address(0), "Missing previous step");
+        require(address(end) != address(0), "Missing previous step");
+
+        pause = pauseFab.newPause(delay, address(0), authority);
+
+        vat.rely(address(pause.proxy()));
+        cat.rely(address(pause.proxy()));
+        dog.rely(address(pause.proxy()));
+        vow.rely(address(pause.proxy()));
+        jug.rely(address(pause.proxy()));
+        pot.rely(address(pause.proxy()));
+        spotter.rely(address(pause.proxy()));
+        flap.rely(address(pause.proxy()));
+        flop.rely(address(pause.proxy()));
+        end.rely(address(pause.proxy()));
+    }
+
+    function deployESM(address gov, uint256 min) public auth {
+        require(address(pause) != address(0), "Missing previous step");
+
+        // Deploy ESM
+        esm = esmFab.newESM(gov, address(end), address(pause.proxy()), min);
+        end.rely(address(esm));
+        vat.rely(address(esm));
+    }
+
+    function deployCollateralFlip(bytes32 ilk, address join, address pip) public auth {
         require(ilk != bytes32(""), "Missing ilk name");
-        require(adapter != address(0), "Missing adapter address");
-        require(mover   != address(0), "Missing mover address");
-        require(pip != address(0), "Missing PIP address");
-        require(vat != address(0), "Missing VAT deployment");
-        require(cat != address(0), "Missing VAT deployment");
+        require(join != address(0), "Missing join address");
+        require(pip != address(0), "Missing pip address");
+        require(address(pause) != address(0), "Missing previous step");
 
         // Deploy
-        ilks[ilk].flip = flipFab.newFlip(daiMove, mover);
-        ilks[ilk].adapter = adapter;
-        ilks[ilk].mover = mover;
-        ilks[ilk].spotter = spotFab.newSpotter(pit, ilk);
-        ilks[ilk].spotter.file(pip); // Set pip
-        ilks[ilk].spotter.file(ONE); // Set mat
+        ilks[ilk].flip = flipFab.newFlip(address(this), address(vat), address(cat), ilk);
+        ilks[ilk].join = join;
+        Spotter(spotter).file(ilk, "pip", address(pip)); // Set pip
 
         // Internal references set up
-        cat.file(ilk, "flip", ilks[ilk].flip);
-        cat.file(ilk, "lump", uint(10000 ether)); // 10000 DAI per batch
-        cat.file(ilk, "chop", ONE);
+        cat.file(ilk, "flip", address(ilks[ilk].flip));
         vat.init(ilk);
-        drip.init(ilk);
+        jug.init(ilk);
 
         // Internal auth
-        vat.rely(ilks[ilk].flip);
-        vat.rely(adapter);
-        vat.rely(mover);
-        pit.rely(ilks[ilk].spotter);
-        ilks[ilk].spotter.rely(mom);
-
-        // Update spotter
-        ilks[ilk].spotter.poke();
+        vat.rely(join);
+        cat.rely(address(ilks[ilk].flip));
+        ilks[ilk].flip.rely(address(cat));
+        ilks[ilk].flip.rely(address(end));
+        ilks[ilk].flip.rely(address(esm));
+        ilks[ilk].flip.rely(address(pause.proxy()));
     }
 
-    // developer backdoor
-    function rely(address dev) public auth {
-        vat.rely(dev);
-        pit.rely(dev);
-        cat.rely(dev);
-        vow.rely(dev);
-        flop.rely(dev);
-        drip.rely(dev);
+    function deployCollateralClip(bytes32 ilk, address join, address pip, address calc) public auth {
+        require(ilk != bytes32(""), "Missing ilk name");
+        require(join != address(0), "Missing join address");
+        require(pip != address(0), "Missing pip address");
+        require(address(pause) != address(0), "Missing previous step");
+
+        // Deploy
+        ilks[ilk].clip = clipFab.newClip(address(this), address(vat), address(spotter), address(dog), ilk);
+        ilks[ilk].join = join;
+        Spotter(spotter).file(ilk, "pip", address(pip)); // Set pip
+
+        // Internal references set up
+        dog.file(ilk, "clip", address(ilks[ilk].clip));
+        ilks[ilk].clip.file("vow", address(vow));
+
+        // Use calc with safe default if not configured
+        if (calc == address(0)) {
+            calc = address(calcFab.newLinearDecrease(address(this)));
+            LinearDecrease(calc).file(bytes32("tau"), 1 hours);
+        }
+        ilks[ilk].clip.file("calc", calc);
+        vat.init(ilk);
+        jug.init(ilk);
+
+        // Internal auth
+        vat.rely(join);
+        vat.rely(address(ilks[ilk].clip));
+        dog.rely(address(ilks[ilk].clip));
+        ilks[ilk].clip.rely(address(dog));
+        ilks[ilk].clip.rely(address(end));
+        ilks[ilk].clip.rely(address(esm));
+        ilks[ilk].clip.rely(address(pause.proxy()));
+    }
+
+    function releaseAuth() public auth {
+        vat.deny(address(this));
+        cat.deny(address(this));
+        dog.deny(address(this));
+        vow.deny(address(this));
+        jug.deny(address(this));
+        pot.deny(address(this));
+        dai.deny(address(this));
+        spotter.deny(address(this));
+        flap.deny(address(this));
+        flop.deny(address(this));
+        end.deny(address(this));
+    }
+
+    function releaseAuthFlip(bytes32 ilk) public auth {
+        ilks[ilk].flip.deny(address(this));
+    }
+
+    function releaseAuthClip(bytes32 ilk) public auth {
+        ilks[ilk].clip.deny(address(this));
     }
 }

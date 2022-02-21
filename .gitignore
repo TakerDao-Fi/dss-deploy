@@ -4,3 +4,4 @@ load-mcd*
 load-ilk*
 
 .vscode/
+.DS_Store
